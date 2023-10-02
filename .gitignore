@@ -1,0 +1,9 @@
+# ide info
+.vscode
+.idea
+
+# MAC files
+.DS_Store
+
+# python bins
+__pycache__

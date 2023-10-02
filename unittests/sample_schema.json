@@ -1,0 +1,5 @@
+{
+    "Name": "object",
+    "Age": "float64",
+    "Email": "string"
+}
