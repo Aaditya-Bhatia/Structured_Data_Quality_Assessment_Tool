@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from DataPreparation import DataPreparation
+import cli_tool
 
 
 class TestSchemaViolations(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestSchemaViolations(unittest.TestCase):
             }
         )
         dp_obj = DataPreparation(df=data)
-        violations = dp_obj.detect_schema_violations(schema_path="sample_schema.json")
+        violations = dp_obj.report_schema_violations(schema_path="sample_schema.json")
         print(violations)
         self.assertIn("Email", violations)
 
@@ -47,6 +48,8 @@ class TestSchemaViolations(unittest.TestCase):
         # there are still missing values
         dp_obj = DataPreparation(df=self.df)
         total_missing = dp_obj.fill_missing_values()
+
+        dp_obj.df.to_csv('missing_removed.csv')
         self.assertGreater(total_missing,0)
 
 
@@ -63,17 +66,28 @@ class TestSchemaViolations(unittest.TestCase):
         self.assertGreater(len(redun_cols),0)
 
     def test_class_overlap(self):
-        # TODO: fix missing values first hten this test will work.
-        dp_obj = DataPreparation(df=self.df, y_label='RealBug')  # assuming C as target column
-        # for class overlap to work, first we need to remove Nas in teh dataset
+        dp_obj = DataPreparation(df=self.df, y_label='RealBug')
+        # for class overlap to work, first we need to remove Nas in the dataset
         _ = dp_obj.fill_missing_values()
         overlapped_row_count = dp_obj.class_overlap_removal()
-        print(overlapped_row_count)
+        self.assertGreater(overlapped_row_count, 10)
+
+    def test_differently_distributed_feature(self):
+        dp_obj = DataPreparation(df=self.df, y_label='RealBug')
+        different_features = dp_obj.report_differently_distributed_feature()
+        # print(f"{different_features=}")
+        self.assertGreater(len(different_features), 1)
+
+    def test_constant_feature(self):
+        dp_obj = DataPreparation(df=self.df, y_label='RealBug')
+        # I manually added a constant feature in the testing csv
+        constant_features = dp_obj.remove_constant_features()
+        self.assertEqual(len(constant_features),1)
 
 
-# TODO: finally do end-to-end testing on shell
-# need to test main.py -- test case for that? as gpt!
-# update the log files
+    def test_clean_and_generate_report(self):
+        cleaned_df = cli_tool.clean_and_generate_report(self.df, schema_path=None, y_label='RealBug')
+        print(cleaned_df.shape)
 
 if __name__ == "__main__":
     unittest.main()
